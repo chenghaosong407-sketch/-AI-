@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>教研助手界面方案合集</title>
+<style>
+/* 布局:页头 → 建议 → 方案标签页;每个方案先一段说明和色板,再排两部手机和一个浏览器窗口 */
+:root {
+  --bg: #eef0f3;
+  --fg: #1b1f27;
+  --muted: #596170;
+  --line: #d9dde4;
+  --card: #ffffff;
+  --accent: #2f5bd3;
+  --accent-soft: #e3eafc;
+  --bezel: #1a1d23;
+  --shadow: rgba(20, 28, 45, .18);
+  --font-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", system-ui, sans-serif;
+  --font-serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121418; --fg: #e6e8ec; --muted: #9aa1ad; --line: #2a2e36; --card: #1a1d23;
+    --accent: #8aa8ff; --accent-soft: #1f2a45; --bezel: #050608; --shadow: rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121418; --fg: #e6e8ec; --muted: #9aa1ad; --line: #2a2e36; --card: #1a1d23;
+  --accent: #8aa8ff; --accent-soft: #1f2a45; --bezel: #050608; --shadow: rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.65 var(--font-sans); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 72px; display: grid; gap: 28px; }
+
+/* 页头 */
+.page-head { display: grid; gap: 8px; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; color: var(--muted); }
+.page-head h1 { margin: 0; font: 700 clamp(24px, 4vw, 34px)/1.25 var(--font-serif); text-wrap: balance; }
+.page-head p { margin: 0; color: var(--muted); max-width: 62ch; }
+.advice { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: grid; gap: 8px; max-width: 860px; }
+.advice h2 { margin: 0; font-size: 16px; }
+.advice p { margin: 0; color: var(--muted); }
+.advice b { color: var(--fg); }
+
+/* 标签页 */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; }
+.tab { text-decoration: none; font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 方案说明 */
+.plan { display: grid; gap: 24px; scroll-margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--line); }
+.plan-intro { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.plan-intro h2 { margin: 0 0 6px; font: 700 22px/1.3 var(--font-serif); }
+.plan-intro p { margin: 0 0 10px; color: var(--muted); max-width: 60ch; }
+.facts { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.facts li { display: grid; grid-template-columns: 5.5em minmax(0, 1fr); gap: 8px; }
+.facts span { color: var(--muted); }
+.swatches { display: grid; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.swatch-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.sw { display: grid; gap: 4px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sw i { display: block; width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line); }
+.type-sample { font-size: 13px; color: var(--muted); }
+.type-sample b { display: block; font-size: 20px; color: var(--fg); line-height: 1.3; }
+
+/* 屏幕排布 */
+.screens { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+.shot { display: grid; gap: 10px; justify-items: start; min-width: 0; }
+.cap { font-size: 13px; color: var(--muted); }
+.cap b { color: var(--fg); font-weight: 500; }
+.desk { width: 100%; }
+.scroll-x { overflow-x: auto; max-width: 100%; padding-bottom: 6px; }
+
+/* 手机外框 */
+.phone { width: 320px; max-width: 100%; height: 700px; border-radius: 42px; background: var(--bezel); padding: 10px; box-shadow: 0 24px 48px -24px var(--shadow); flex: none; }
+.screen { height: 100%; border-radius: 33px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+.sb { height: 30px; flex: none; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; font-size: 12px; font-weight: 600; }
+.sb::after { content: ""; width: 34px; height: 11px; border-radius: 3px; border: 1.5px solid currentColor; opacity: .7; }
+
+/* 浏览器外框 */
+.browser { width: 1040px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 24px 48px -28px var(--shadow); }
+.chrome { height: 36px; background: #e6e8ec; display: flex; align-items: center; gap: 8px; padding: 0 14px; }
+.chrome i { width: 11px; height: 11px; border-radius: 50%; background: #c9cdd4; }
+.chrome span { margin-left: 12px; flex: 1; max-width: 420px; height: 22px; border-radius: 6px; background: #fff; color: #6b7280; font-size: 12px; line-height: 22px; padding: 0 10px; }
+.sample { position: absolute; top: 10px; right: 14px; font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(0, 0, 0, .06); color: #6b7280; }
+
+.ic { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.ic.sm { width: 15px; height: 15px; }
+
+/* 层级标签(各方案通用的语义色) */
+.tier { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; line-height: 1; padding: 4px 7px; border-radius: 6px; white-space: nowrap; }
+.t1 { background: #dcf3e3; color: #1a6b35; }
+.t2 { background: #ddeefc; color: #0b5cad; }
+.t3 { background: #eee5fb; color: #6a3fc0; }
+.t4 { background: #eef0f2; color: #545b64; }
+
+/* ================= 方案A:清爽蓝 ================= */
+.ta { --p: #1f6feb; --p-soft: #e8f0fe; --ink: #1f2328; --mut: #6b7280; --ln: #e5e7eb; --base: #f6f7f9; --pn: #ffffff;
+  background: var(--base); color: var(--ink); font: 13px/1.6 var(--font-sans); }
+.ta-top { flex: none; display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--pn); border-bottom: 1px solid var(--ln); }
+.ta-top b { flex: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ta-iconbtn { width: 30px; height: 30px; border: 1px solid var(--ln); border-radius: 8px; display: grid; place-items: center; }
+.ta-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--p-soft); color: var(--p); }
+.ta-body { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.ta-hello { text-align: center; padding: 34px 6px 10px; }
+.ta-hello h3 { margin: 0 0 4px; font-size: 18px; }
+.ta-hello p { margin: 0; color: var(--mut); font-size: 12px; }
+.ta-label { font-size: 12px; color: var(--mut); margin-top: 8px; }
+.ta-sugg { background: var(--pn); border: 1px solid var(--ln); border-radius: 12px; padding: 10px 12px; }
+.ta-quota { text-align: center; font-size: 11px; color: var(--mut); margin-top: auto; }
+.ta-composer { flex: none; background: var(--pn); border-top: 1px solid var(--ln); padding: 8px 12px 14px; display: grid; gap: 8px; }
+.ta-chips { display: flex; gap: 6px; overflow: hidden; }
+.ta-chips span { flex: none; font-size: 12px; border: 1px solid var(--ln); border-radius: 999px; padding: 3px 10px; }
+.ta-input { display: flex; gap: 8px; align-items: center; }
+.ta-input .box { flex: 1; border: 1px solid var(--ln); border-radius: 10px; height: 38px; display: flex; align-items: center; padding: 0 10px; color: var(--mut); }
+.ta-input .btn { height: 38px; padding: 0 12px; border-radius: 10px; display: grid; place-items: center; border: 1px solid var(--ln); }
+.ta-input .btn.pri { background: var(--p); border-color: var(--p); color: #fff; }
+.ta-user { align-self: flex-end; max-width: 86%; background: var(--p); color: #fff; border-radius: 14px 14px 4px 14px; padding: 9px 12px; }
+.ta-bot { background: var(--pn); border: 1px solid var(--ln); border-radius: 14px 14px 14px 4px; padding: 11px 13px; display: grid; gap: 6px; }
+.ta-bot p { margin: 0; }
+.ta-bot ol { margin: 0; padding-left: 18px; }
+.ta-bot strong { font-weight: 700; }
+.ta-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 11px; color: var(--mut); }
+.ta-act { display: flex; gap: 6px; }
+.ta-act span { border: 1px solid var(--ln); border-radius: 8px; padding: 3px 8px; display: inline-flex; gap: 4px; align-items: center; font-size: 11px; color: var(--ink); background: var(--pn); }
+/* A 后台 */
+.ta-admin { display: grid; grid-template-columns: 1fr; padding: 22px 28px 28px; gap: 14px; min-height: 560px; position: relative; }
+.ta-admin h4 { margin: 0; font-size: 18px; }
+.ta-tabs { display: flex; gap: 6px; }
+.ta-tabs span { border: 1px solid var(--ln); background: var(--pn); border-radius: 8px; padding: 4px 12px; font-size: 13px; }
+.ta-tabs span.on { background: var(--p); color: #fff; border-color: var(--p); }
+.ta-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; }
+.ta-card { background: var(--pn); border: 1px solid var(--ln); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.ta-card h5 { margin: 0; font-size: 14px; }
+.ta-tiers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.ta-stat { background: var(--base); border-radius: 10px; padding: 10px; display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
+.ta-stat b { font-size: 22px; line-height: 1.2; }
+.ta-stat small { color: var(--mut); }
+.bars { display: grid; gap: 7px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.bar { display: grid; grid-template-columns: 4.5em minmax(0, 1fr) 2.5em; gap: 8px; align-items: center; }
+.bar i { display: block; height: 10px; border-radius: 5px; }
+.ta .bar i { background: var(--p); }
+.bar em { font-style: normal; text-align: right; }
+.ta-cfg { font-size: 12px; color: var(--mut); display: grid; gap: 2px; }
+.rows { display: grid; font-size: 12px; font-variant-numeric: tabular-nums; }
+.rows div { display: grid; grid-template-columns: minmax(0, 1fr) 5em 5em; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--ln); }
+.rows div:last-child { border-bottom: none; }
+.rows .h { color: var(--mut); }
+
+/* ================= 方案B:书卷学院风 ================= */
+.tb { --ink: #18263a; --paper: #eef1ef; --sheet: #fbfcfb; --rule: #d3dad6; --mut: #5d6b74; --brass: #9a722b; --deep: #1f3b57;
+  background: var(--paper); color: var(--ink); font: 13px/1.65 var(--font-sans); }
+.tb .serif { font-family: var(--font-serif); }
+.tb-head { flex: none; padding: 12px 18px 10px; display: grid; gap: 2px; }
+.tb-eyebrow { font-size: 11px; letter-spacing: .14em; color: var(--brass); }
+.tb-head h3 { margin: 0; font: 700 22px/1.3 var(--font-serif); }
+.tb-head small { color: var(--mut); }
+.tb-body { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 18px 14px; display: flex; flex-direction: column; gap: 14px; }
+.tb-body > * { flex: none; }
+.tb-sec { font: 600 13px/1.4 var(--font-serif); color: var(--deep); border-bottom: 1px solid var(--rule); padding-bottom: 6px; display: flex; justify-content: space-between; }
+.tb-sec small { font-family: var(--font-sans); font-weight: 400; color: var(--mut); font-size: 11px; }
+.catalog { display: grid; gap: 6px; }
+.cat { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; font-variant-numeric: tabular-nums; }
+.cat b { height: 100%; display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 700; padding: 8px 0; }
+.cat span { padding: 0 10px; }
+.cat em { font-style: normal; color: var(--mut); padding-right: 10px; font-size: 12px; }
+.c1 { background: #2f6b4f; } .c2 { background: #2c5d8a; } .c3 { background: #6a4c93; } .c4 { background: #6b6f76; }
+.toc { display: grid; }
+.toc div { display: flex; align-items: baseline; gap: 6px; padding: 7px 0; border-bottom: 1px dashed var(--rule); }
+.toc b { font: 600 14px/1.3 var(--font-serif); white-space: nowrap; }
+.toc i { flex: 1; border-bottom: 1px dotted var(--mut); transform: translateY(-3px); opacity: .5; min-width: 12px; }
+.toc span { color: var(--mut); font-size: 11px; text-align: right; }
+.tb-compose { flex: none; padding: 10px 18px 16px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--rule); background: var(--sheet); }
+.tb-compose .line { flex: 1; border-bottom: 1.5px solid var(--ink); padding: 6px 2px; color: var(--mut); }
+.tb-compose .send { width: 36px; height: 36px; border-radius: 50%; background: var(--deep); color: #fff; display: grid; place-items: center; }
+.tb-bar { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--rule); font: 600 15px/1.4 var(--font-serif); }
+.tb-q { border-left: 3px solid var(--brass); padding: 2px 0 2px 10px; display: grid; gap: 2px; }
+.tb-q small { color: var(--mut); font-size: 11px; }
+.tb-q p { margin: 0; font: 600 14px/1.5 var(--font-serif); }
+.form { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.form > div { display: grid; grid-template-columns: 38px minmax(0, 1fr); border-bottom: 1px solid var(--rule); }
+.form > div:last-child { border-bottom: none; }
+.form dt { writing-mode: vertical-rl; letter-spacing: .3em; font: 600 12px/1 var(--font-serif); color: var(--deep); background: #e5ebe8; display: grid; place-items: center; padding: 8px 0; }
+.form dd { margin: 0; padding: 8px 10px; display: grid; gap: 4px; }
+.form dd p { margin: 0; }
+.chip-b { display: inline-block; font-size: 10.5px; border: 1px solid var(--rule); border-radius: 4px; padding: 0 5px; margin-right: 4px; color: var(--deep); background: #f1f4f2; }
+.chip-b.first { border-color: var(--brass); color: var(--brass); background: #f8f2e6; }
+.cards { display: grid; gap: 6px; }
+.icard { display: grid; grid-template-columns: 46px minmax(0, 1fr); background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; font-size: 12px; }
+.icard b { color: #fff; display: grid; place-items: center; font-size: 11px; line-height: 1.2; text-align: center; padding: 6px 2px; }
+.icard span { padding: 7px 10px; }
+.icard small { display: block; color: var(--mut); font-size: 10.5px; }
+.tb-acts { display: flex; justify-content: space-between; font-size: 12px; color: var(--deep); padding-top: 2px; }
+.tb-acts span { display: inline-flex; gap: 4px; align-items: center; }
+/* B 后台 */
+.tb-admin { display: grid; grid-template-columns: 190px minmax(0, 1fr); min-height: 580px; position: relative; }
+.tb-nav { background: var(--deep); color: #dfe7ee; padding: 22px 0; display: grid; align-content: start; gap: 2px; }
+.tb-nav b { font: 700 16px/1.3 var(--font-serif); color: #fff; padding: 0 20px 14px; }
+.tb-nav span { padding: 7px 20px; font-size: 13px; display: flex; justify-content: space-between; }
+.tb-nav span.on { background: rgba(255, 255, 255, .1); border-left: 3px solid #d6b26a; padding-left: 17px; color: #fff; }
+.tb-nav em { font-style: normal; background: #d6b26a; color: var(--deep); border-radius: 8px; font-size: 11px; padding: 0 6px; }
+.tb-main { padding: 22px 28px; display: grid; gap: 18px; align-content: start; background: var(--paper); }
+.tb-main h4 { margin: 0; font: 700 20px/1.3 var(--font-serif); }
+.stack { display: flex; height: 16px; border-radius: 4px; overflow: hidden; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--mut); flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; }
+.ledger { width: 100%; border-collapse: collapse; background: var(--sheet); border: 1px solid var(--rule); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.ledger th { text-align: left; font: 600 12px/1.4 var(--font-serif); color: var(--deep); background: #e5ebe8; padding: 7px 10px; }
+.ledger td { padding: 7px 10px; border-top: 1px solid var(--rule); }
+.ledger .btn { border: 1px solid var(--deep); color: var(--deep); border-radius: 4px; padding: 1px 8px; font-size: 12px; }
+.tb-two { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; }
+
+/* ================= 方案C:工作台宫格 ================= */
+.tc { --o: #f26a21; --o-soft: #fff1e8; --ink: #222326; --mut: #75777d; --ln: #ececec; --base: #f5f5f3; --pn: #ffffff;
+  background: var(--base); color: var(--ink); font: 13px/1.55 var(--font-sans); }
+.tc-hero { flex: none; background: var(--o); color: #fff; padding: 6px 16px 18px; display: grid; gap: 4px; border-radius: 0 0 22px 22px; }
+.tc-hero .sbw { color: #fff; }
+.tc-hero h3 { margin: 4px 0 0; font-size: 20px; }
+.tc-hero p { margin: 0; opacity: .9; font-size: 12px; }
+.tc-search { margin-top: 10px; background: #fff; color: var(--mut); border-radius: 12px; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px; }
+.tc-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.tc-body > * { flex: none; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: var(--pn); border-radius: 16px; padding: 12px 6px; }
+.tile { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.tile .ib { width: 40px; height: 40px; border-radius: 12px; background: var(--o-soft); color: var(--o); display: grid; place-items: center; }
+.tile b { font-size: 12px; font-weight: 500; }
+.tile small { font-size: 10px; color: var(--mut); line-height: 1.2; }
+.panel { background: var(--pn); border-radius: 16px; padding: 12px 14px; display: grid; gap: 8px; }
+.panel h6 { margin: 0; font-size: 13px; display: flex; justify-content: space-between; }
+.panel h6 small { font-weight: 400; color: var(--mut); }
+.li { display: flex; gap: 8px; align-items: center; font-size: 12px; }
+.li span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.li em { font-style: normal; font-size: 11px; color: var(--mut); }
+.pill { font-size: 10.5px; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.pill.wait { background: #fff4d6; color: #8a5a00; }
+.pill.ok { background: #e3f5e8; color: #1f7a3c; }
+.tabbar { flex: none; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--pn); border-top: 1px solid var(--ln); padding: 6px 0 14px; }
+.tabbar span { display: grid; justify-items: center; gap: 2px; font-size: 10.5px; color: var(--mut); }
+.tabbar span.on { color: var(--o); }
+.tc-bar { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--pn); border-bottom: 1px solid var(--ln); }
+.tc-bar b { flex: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tc-bar .pill { background: var(--o-soft); color: var(--o); }
+.tc-user { justify-self: end; max-width: 86%; background: var(--ink); color: #fff; border-radius: 16px 16px 4px 16px; padding: 9px 12px; }
+.answer { background: var(--pn); border-radius: 16px; padding: 12px 14px; display: grid; gap: 10px; }
+.concl { background: var(--o-soft); border-radius: 12px; padding: 9px 11px; }
+.concl b { color: var(--o); display: block; font-size: 11px; margin-bottom: 2px; }
+.sec h6 { margin: 0 0 4px; font-size: 12px; color: var(--mut); font-weight: 500; }
+.sec p { margin: 0; }
+.steps { display: grid; gap: 6px; }
+.step { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; }
+.step i { width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: #fff; font-style: normal; font-size: 11px; display: grid; place-items: center; }
+.step.first i { background: var(--o); }
+.tagx { display: inline-block; font-size: 10.5px; padding: 0 6px; border-radius: 6px; background: #f0f0ee; color: var(--ink); margin-right: 4px; }
+.tagx.hot { background: var(--o); color: #fff; }
+.foot { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 11px; color: var(--mut); border-top: 1px dashed var(--ln); padding-top: 8px; }
+.actbar { flex: none; display: grid; gap: 8px; background: var(--pn); border-top: 1px solid var(--ln); padding: 8px 12px 14px; }
+.acts4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.acts4 span { display: flex; justify-content: center; gap: 4px; align-items: center; font-size: 11.5px; background: var(--base); border-radius: 10px; padding: 6px 0; }
+.ask { display: flex; gap: 8px; align-items: center; }
+.ask .plus { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--ln); display: grid; place-items: center; }
+.ask .box { flex: 1; height: 36px; border-radius: 18px; background: var(--base); color: var(--mut); display: flex; align-items: center; padding: 0 14px; }
+.ask .go { width: 36px; height: 36px; border-radius: 50%; background: var(--o); color: #fff; display: grid; place-items: center; }
+/* C 后台 */
+.tc-admin { display: grid; min-height: 580px; position: relative; }
+.tc-top { background: var(--pn); border-bottom: 1px solid var(--ln); display: flex; align-items: center; gap: 22px; padding: 0 28px; height: 54px; font-size: 13px; }
+.tc-top b { font-size: 15px; }
+.tc-top span.on { color: var(--o); font-weight: 500; box-shadow: inset 0 -2px 0 var(--o); padding: 17px 0; }
+.tc-main { padding: 20px 28px 26px; display: grid; gap: 14px; align-content: start; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.kpi { background: var(--pn); border-radius: 14px; padding: 14px 16px; display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
+.kpi small { color: var(--mut); }
+.kpi b { font-size: 26px; line-height: 1.2; }
+.kpi.alert b { color: var(--o); }
+.tc-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rank { display: grid; gap: 8px; font-size: 12.5px; }
+.rank div { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.rank i { font-style: normal; width: 22px; height: 22px; border-radius: 6px; background: var(--base); display: grid; place-items: center; font-size: 11px; font-variant-numeric: tabular-nums; }
+.rank div:first-child i { background: var(--o); color: #fff; }
+.quote { font-size: 12.5px; display: grid; gap: 2px; padding: 8px 10px; background: var(--base); border-radius: 10px; }
+.quote small { color: var(--mut); }
+
+/* 对比 */
+.compare { display: flex; flex-wrap: wrap; gap: 32px; }
+
+@media (max-width: 760px) {
+  .plan-intro { grid-template-columns: minmax(0, 1fr); }
+  .screens { gap: 24px; justify-content: center; }
+  .shot { justify-items: center; }
+  .desk .shot { justify-items: start; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tab { transition: background .15s, color .15s; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="M20.5 11.5l-8.4 8.4a5 5 0 0 1-7.1-7.1l8.4-8.4a3.3 3.3 0 0 1 4.7 4.7l-8.4 8.4a1.7 1.7 0 0 1-2.4-2.4l7.7-7.7"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2.6-6.4z"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-7a2 2 0 0 1 3 2l-1 4h5a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 16.8 20H7"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M7 13V4H4v9zM7 13l4 7a2 2 0 0 0 3-2l-1-4h5a2 2 0 0 0 2-2.3l-1.2-6A2 2 0 0 0 16.8 4H7"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><path d="M9 9h11v11H9zM5 15V4h11"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h5"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18-3-3.5-3-14.5 0-18"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+  <symbol id="i-parent" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.2"/><path d="M15.5 14.2c3 .2 5.5 2.6 5.5 5.8"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-board" viewBox="0 0 24 24"><path d="M3 4h18v12H3zM8 20l4-4 4 4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v11H3z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="page-head">
+    <div class="eyebrow">优学东方 · 原版教研助手</div>
+    <h1>教研助手界面方案</h1>
+    <p>三个设计方向合在一页,从上往下依次是方案A、B、C和三个回答页的并排对比。每个方向画了三张图:手机首页、手机上一次"答疑"的回答、电脑上的管理后台。图中的对话、人名和数字都是示例。</p>
+  </header>
+
+  <section class="advice" aria-label="建议">
+    <h2>我的建议:方案C</h2>
+    <p>老师大多在手机上用。方案C把八个功能做成首页宫格,点一下就进对应指令,不用记"备课:教材+级别+单元"这种格式;入库卡审核进度和最近对话也在首页。<b>想最快上线就选方案A</b>,它是现在界面的精修版,改动最小。方案B最像"教研室",适合以电脑为主、重视文档感的团队。</p>
+  </section>
+
+  <nav class="tabs" aria-label="目录">
+    <a class="tab" href="#plan-a">方案A 清爽蓝</a>
+    <a class="tab" href="#plan-b">方案B 书卷学院风</a>
+    <a class="tab" href="#plan-c">方案C 工作台宫格</a>
+    <a class="tab" href="#plan-compare">三个回答页并排</a>
+  </nav>
+
+  <!-- ===================== 方案A ===================== -->
+  <section class="plan" id="plan-a" aria-labelledby="tab-a">
+    <div class="plan-intro">
+      <div>
+        <h2>方案A 清爽蓝 · 现有界面精修</h2>
+        <p>保留现在的结构:对话为主,指令按钮排在输入框上方。首页加"试试这样问"示例,回答下方集中放来源和操作按钮。</p>
+        <ul class="facts">
+          <li><span>适合</span>想尽快上线,老师已经熟悉现在的界面</li>
+          <li><span>改动量</span>约半天(预估),只改样式和首页</li>
+          <li><span>不足</span>新老师仍需要记指令格式</li>
+        </ul>
+      </div>
+      <div class="swatches">
+        <div class="swatch-row">
+          <div class="sw"><i style="background:#1f6feb"></i>主色</div>
+          <div class="sw"><i style="background:#e8f0fe"></i>浅蓝</div>
+          <div class="sw"><i style="background:#1f2328"></i>正文</div>
+          <div class="sw"><i style="background:#f6f7f9"></i>底色</div>
+          <div class="sw"><i style="background:#ffffff"></i>卡片</div>
+        </div>
+        <div class="type-sample"><b style="font-family:var(--font-sans)">思源黑体 / 苹方</b>标题和正文同一套无衬线字体,手机上最清楚</div>
+      </div>
+    </div>
+
+    <div class="screens">
+      <figure class="shot" style="margin:0">
+        <div class="phone"><div class="screen ta">
+          <div class="sb" style="background:#fff">9:41</div>
+          <div class="ta-top"><span class="ta-iconbtn"><svg class="ic sm"><use href="#i-menu"/></svg></span><b>新对话</b><span class="ta-badge">联网</span></div>
+          <div class="ta-body">
+            <div class="ta-hello"><h3>优学东方·原版教研助手</h3><p>PU / Think 备课、分层、应试衔接、评课、师训、家长话术</p></div>
+            <div class="ta-label">试试这样问</div>
+            <div class="ta-sugg">答疑:Think 第1级班里一半学生跟不上课文,怎么办?</div>
+            <div class="ta-sugg">备课:PU 第3级 Unit 5,40分钟,混合班</div>
+            <div class="ta-sugg">家长话术:家长问原版对中考有没有用</div>
+            <div class="ta-quota">今日已提问 3 次</div>
+          </div>
+          <div class="ta-composer">
+            <div class="ta-chips"><span>菜单</span><span>答疑</span><span>备课</span><span>分层</span><span>衔接</span><span>家长话术</span></div>
+            <div class="ta-input"><span class="btn"><svg class="ic sm"><use href="#i-clip"/></svg></span><span class="box">直接提问,或点上方指令</span><span class="btn pri">发送</span></div>
+          </div>
+        </div></div>
+        <figcaption class="cap"><b>手机 · 首页</b> 示例问题点一下就填进输入框</figcaption>
+      </figure>
+
+      <figure class="shot" style="margin:0" data-compare="方案A 清爽蓝">
+        <div class="phone"><div class="screen ta">
+          <div class="sb" style="background:#fff">9:41</div>
+          <div class="ta-top"><span class="ta-iconbtn"><svg class="ic sm"><use href="#i-menu"/></svg></span><b>答疑:Think 第1级跟不上课文</b><span class="ta-badge">联网</span></div>
+          <div class="ta-body">
+            <div class="ta-user">答疑:Think 第1级班里一半学生跟不上课文,怎么办?</div>
+            <div class="ta-bot">
+              <p><strong>结论:</strong>先别换教材。两周内做下面三件事,再看单元测是否回升;不回升再按跨级规则调整(机构标准)。</p>
+              <p><strong>原因:</strong></p>
+              <ol><li>选级:部分学生入学词汇量低于本级要求,需对照入学诊断</li><li>教法:课文整篇精讲,基础层没有支架</li></ol>
+              <p><strong>做法:</strong></p>
+              <ol><li><strong>第一优先:</strong>课前 10 分钟词汇预学,每课 8-10 个核心词</li><li>课中基础层给句型支架,提升层改写结尾</li><li>第 2 周末用 5 道细节题检测,对 4 题算达标</li></ol>
+              <p><strong>注意:</strong>和家长只讲学习安排,不承诺分数。</p>
+            </div>
+            <div class="ta-meta">知识库 <span class="tier t1">L1 原版班跨级调整规则</span><span class="tier t3">L3 Think1 分层阅读课例</span></div>
+            <div class="ta-act"><span><svg class="ic sm"><use href="#i-copy"/></svg>复制</span><span><svg class="ic sm"><use href="#i-doc"/></svg>下载Word</span><span><svg class="ic sm"><use href="#i-up"/></svg></span><span><svg class="ic sm"><use href="#i-down"/></svg></span></div>
+          </div>
+          <div class="ta-composer">
+            <div class="ta-input"><span class="btn"><svg class="ic sm"><use href="#i-clip"/></svg></span><span class="box">继续追问……</span><span class="btn pri">发送</span></div>
+          </div>
+        </div></div>
+        <figcaption class="cap"><b>手机 · 回答</b> 来源标签按 L1-L4 上色,操作按钮在回答下方</figcaption>
+      </figure>
+
+      <figure class="shot desk" style="margin:0">
+        <div class="scroll-x"><div class="browser">
+          <div class="chrome"><i></i><i></i><i></i><span>192.168.1.20:8000/admin</span></div>
+          <div class="ta ta-admin">
+            <span class="sample">示例数据</span>
+            <h4>管理后台</h4>
+            <div class="ta-tabs"><span class="on">概览</span><span>知识库</span><span>入库卡审核 3</span><span>回答反馈</span><span>知识缺口</span><span>账号</span></div>
+            <div class="ta-grid">
+              <div class="ta-card">
+                <h5>知识库</h5>
+                <div class="ta-tiers">
+                  <div class="ta-stat"><span class="tier t1">L1 机构标准</span><b>12</b><small>份 · 86 段</small></div>
+                  <div class="ta-stat"><span class="tier t2">L2 官方依据</span><b>34</b><small>份 · 412 段</small></div>
+                  <div class="ta-stat"><span class="tier t3">L3 课例参考</span><b>18</b><small>份 · 140 段</small></div>
+                  <div class="ta-stat"><span class="tier t4">L4 参考资料</span><b>57</b><small>份 · 903 段</small></div>
+                </div>
+                <div class="ta-cfg"><span>模型:doubao-seed-2-1-pro-260915</span><span>向量:doubao-embedding-vision-251215 · 联网搜索:博查</span></div>
+              </div>
+              <div class="ta-card">
+                <h5>近 30 天指令使用</h5>
+                <div class="bars">
+                  <div class="bar"><span>答疑</span><i style="width:100%"></i><em>126</em></div>
+                  <div class="bar"><span>备课</span><i style="width:69.8%"></i><em>88</em></div>
+                  <div class="bar"><span>家长话术</span><i style="width:32.5%"></i><em>41</em></div>
+                  <div class="bar"><span>衔接</span><i style="width:18.3%"></i><em>23</em></div>
+                  <div class="bar"><span>分层</span><i style="width:15.1%"></i><em>19</em></div>
+                </div>
+                <div class="ta-cfg">回答反馈:有用 41 · 没用 7</div>
+              </div>
+              <div class="ta-card">
+                <h5>教师使用情况</h5>
+                <div class="rows">
+                  <div class="h"><span>老师</span><span>近7天</span><span>近30天</span></div>
+                  <div><span>张老师</span><span>18</span><span>64</span></div>
+                  <div><span>陈老师</span><span>12</span><span>51</span></div>
+                  <div><span>刘老师</span><span>9</span><span>37</span></div>
+                </div>
+              </div>
+              <div class="ta-card">
+                <h5>知识缺口 Top 3</h5>
+                <div class="rows">
+                  <div class="h"><span>缺口</span><span>次数</span><span>最近</span></div>
+                  <div><span>Think 第2级单元卡</span><span>9</span><span>10-09</span></div>
+                  <div><span>2026 常州中考英语题型是否调整</span><span>6</span><span>10-08</span></div>
+                  <div><span>退费咨询的家长沟通口径</span><span>4</span><span>10-05</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+        <figcaption class="cap"><b>电脑 · 管理后台</b> 现有后台的整理版,四个层级一眼看到</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== 方案B ===================== -->
+  <section class="plan" id="plan-b" aria-labelledby="tab-b">
+    <div class="plan-intro">
+      <div>
+        <h2>方案B 书卷学院风 · 教研室的文档感</h2>
+        <p>以"教参"为灵感:首页像一本教研手册的目录,四级知识库画成卡片索引;回答排成带竖排标签的表格,像一页教案。</p>
+        <ul class="facts">
+          <li><span>适合</span>以电脑为主,重视规范和文档感,常把回答打印或转发</li>
+          <li><span>改动量</span>约 1.5 天(预估),回答需要按"结论/原因/做法"分块渲染</li>
+          <li><span>不足</span>衬线标题在部分安卓机上需要额外加载字体</li>
+        </ul>
+      </div>
+      <div class="swatches">
+        <div class="swatch-row">
+          <div class="sw"><i style="background:#1f3b57"></i>墨蓝</div>
+          <div class="sw"><i style="background:#9a722b"></i>铜色</div>
+          <div class="sw"><i style="background:#18263a"></i>正文</div>
+          <div class="sw"><i style="background:#eef1ef"></i>纸色</div>
+          <div class="sw"><i style="background:#fbfcfb"></i>卡片</div>
+        </div>
+        <div class="type-sample"><b style="font-family:var(--font-serif)">思源宋体 标题</b>正文仍用黑体,只在标题和栏目名用宋体</div>
+      </div>
+    </div>
+
+    <div class="screens">
+      <figure class="shot" style="margin:0">
+        <div class="phone"><div class="screen tb">
+          <div class="sb">9:41</div>
+          <div class="tb-head">
+            <span class="tb-eyebrow">优学东方 · 原版教研室</span>
+            <h3>今天备哪一课?</h3>
+            <small>10月10日 星期六 · 张老师</small>
+          </div>
+          <div class="tb-body">
+            <div class="tb-sec">四级知识库<small>示例数据</small></div>
+            <div class="catalog">
+              <div class="cat"><b class="c1">L1</b><span>机构标准</span><em>12 份</em></div>
+              <div class="cat"><b class="c2">L2</b><span>官方依据</span><em>34 份</em></div>
+              <div class="cat"><b class="c3">L3</b><span>课例参考</span><em>18 份</em></div>
+              <div class="cat"><b class="c4">L4</b><span>参考资料</span><em>57 份</em></div>
+            </div>
+            <div class="tb-sec">目录<small>点一项开始</small></div>
+            <div class="toc">
+              <div><b>答疑</b><i></i><span>教学方法 · 质疑原版</span></div>
+              <div><b>备课</b><i></i><span>输出完整教案</span></div>
+              <div><b>分层</b><i></i><span>分班规则 · 三档任务</span></div>
+              <div><b>衔接</b><i></i><span>对应译林版和中考题型</span></div>
+              <div><b>家长话术</b><i></i><span>合规的两个版本</span></div>
+              <div><b>评课</b><i></i><span>五个维度给等级</span></div>
+            </div>
+          </div>
+          <div class="tb-compose"><span class="line">向教研室提问……</span><span class="send"><svg class="ic sm"><use href="#i-send"/></svg></span></div>
+        </div></div>
+        <figcaption class="cap"><b>手机 · 首页</b> 目录式功能列表,知识库像卡片索引</figcaption>
+      </figure>
+
+      <figure class="shot" style="margin:0" data-compare="方案B 书卷学院风">
+        <div class="phone"><div class="screen tb">
+          <div class="sb">9:41</div>
+          <div class="tb-bar"><svg class="ic sm"><use href="#i-back"/></svg>答疑</div>
+          <div class="tb-body" style="padding-top:12px">
+            <div class="tb-q"><small>张老师 · 14:05</small><p>Think 第1级班里一半学生跟不上课文,怎么办?</p></div>
+            <dl class="form" style="margin:0">
+              <div><dt>结论</dt><dd><p>先别换教材。两周内做完下面三件事再看单元测;不回升再按跨级规则调整。</p></dd></div>
+              <div><dt>原因</dt><dd><p><span class="chip-b">选级</span>部分学生入学词汇量低于本级要求</p><p><span class="chip-b">教法</span>课文整篇精讲,基础层没有支架</p></dd></div>
+              <div><dt>做法</dt><dd><p><span class="chip-b first">第一优先</span>课前 10 分钟词汇预学,每课 8-10 个核心词</p><p>课中基础层给句型支架,提升层改写结尾</p><p>第 2 周末 5 道细节题检测,对 4 题算达标</p></dd></div>
+              <div><dt>注意</dt><dd><p>和家长只讲学习安排,不承诺分数。</p></dd></div>
+            </dl>
+            <div class="tb-sec">依据</div>
+            <div class="cards">
+              <div class="icard"><b class="c1">L1<br>标准</b><span>原版班跨级调整规则.md<small>机构标准 · 教研负责人确认</small></span></div>
+              <div class="icard"><b class="c3">L3<br>课例</b><span>Think1 分层阅读课例.docx<small>课例参考</small></span></div>
+            </div>
+            <div class="tb-acts"><span><svg class="ic sm"><use href="#i-doc"/></svg>下载 Word</span><span><svg class="ic sm"><use href="#i-copy"/></svg>复制</span><span><svg class="ic sm"><use href="#i-up"/></svg>有用</span><span><svg class="ic sm"><use href="#i-down"/></svg>没用</span></div>
+          </div>
+        </div></div>
+        <figcaption class="cap"><b>手机 · 回答</b> 竖排栏目像一页教案,依据用索引卡列出</figcaption>
+      </figure>
+
+      <figure class="shot desk" style="margin:0">
+        <div class="scroll-x"><div class="browser">
+          <div class="chrome"><i></i><i></i><i></i><span>192.168.1.20:8000/admin</span></div>
+          <div class="tb tb-admin">
+            <span class="sample">示例数据</span>
+            <nav class="tb-nav"><b>教研台账</b><span class="on">总览</span><span>知识库</span><span>入库卡审核 <em>3</em></span><span>回答反馈</span><span>知识缺口</span><span>账号</span></nav>
+            <div class="tb-main">
+              <h4>台账总览 · 2026年10月</h4>
+              <div style="display:grid;gap:8px">
+                <div class="tb-sec" style="border:none;padding:0">知识库分段构成 · 共 1541 段</div>
+                <div class="stack"><i class="c1" style="width:5.6%"></i><i class="c2" style="width:26.7%"></i><i class="c3" style="width:9.1%"></i><i class="c4" style="width:58.6%"></i></div>
+                <div class="legend"><span><i class="c1"></i>L1 机构标准 86</span><span><i class="c2"></i>L2 官方依据 412</span><span><i class="c3"></i>L3 课例参考 140</span><span><i class="c4"></i>L4 参考资料 903</span></div>
+              </div>
+              <div class="tb-two">
+                <table class="ledger">
+                  <thead><tr><th>待审核入库卡</th><th>归入</th><th>提交</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><td>课例库_Think_L1_分层阅读三档任务</td><td>课例库</td><td>10-09</td><td><span class="btn">审核</span></td></tr>
+                    <tr><td>课例库_PU_L3_词汇接龙分层</td><td>课例库</td><td>10-08</td><td><span class="btn">审核</span></td></tr>
+                    <tr><td>通用_家长会原版说明口径</td><td>机构标准库</td><td>10-07</td><td><span class="btn">审核</span></td></tr>
+                  </tbody>
+                </table>
+                <table class="ledger">
+                  <thead><tr><th>知识缺口(近90天)</th><th>次数</th></tr></thead>
+                  <tbody>
+                    <tr><td>Think 第2级单元卡</td><td>9</td></tr>
+                    <tr><td>2026 常州中考英语题型是否调整</td><td>6</td></tr>
+                    <tr><td>退费咨询的家长沟通口径</td><td>4</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="legend" style="color:var(--mut)"><span>回答反馈:有用 41 · 没用 7</span><span>活跃老师 31 / 36</span><span>模型 doubao-seed-2-1-pro</span></div>
+            </div>
+          </div>
+        </div></div>
+        <figcaption class="cap"><b>电脑 · 管理后台</b> 台账式表格,信息密度高,适合教研负责人每天过一遍</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== 方案C ===================== -->
+  <section class="plan" id="plan-c" aria-labelledby="tab-c">
+    <div class="plan-intro">
+      <div>
+        <h2>方案C 工作台宫格 · 手机优先</h2>
+        <p>像钉钉、企业微信的工作台:首页八个功能宫格,点一下自动填好指令模板;底部四个标签切换首页、对话、资料、我的。回答页的操作按钮固定在底部,单手就能点。</p>
+        <ul class="facts">
+          <li><span>适合</span>老师主要用手机,新老师多,不想记指令</li>
+          <li><span>改动量</span>约 2-3 天(预估),要新增首页、"资料"和"我的"两个页面</li>
+          <li><span>不足</span>电脑上显示偏"手机感",后台需单独设计</li>
+        </ul>
+      </div>
+      <div class="swatches">
+        <div class="swatch-row">
+          <div class="sw"><i style="background:#f26a21"></i>橙色</div>
+          <div class="sw"><i style="background:#fff1e8"></i>浅橙</div>
+          <div class="sw"><i style="background:#222326"></i>正文</div>
+          <div class="sw"><i style="background:#f5f5f3"></i>底色</div>
+          <div class="sw"><i style="background:#ffffff"></i>卡片</div>
+        </div>
+        <div class="type-sample"><b style="font-family:var(--font-sans);font-weight:700">思源黑体 加粗标题</b>大圆角卡片,图标统一线条风格</div>
+      </div>
+    </div>
+
+    <div class="screens">
+      <figure class="shot" style="margin:0">
+        <div class="phone"><div class="screen tc">
+          <div class="tc-hero">
+            <div class="sb sbw" style="padding:0 8px">9:41</div>
+            <h3>下午好,张老师</h3>
+            <p>今天想解决什么问题?</p>
+            <div class="tc-search"><svg class="ic sm"><use href="#i-search"/></svg>直接提问,或选下面的功能</div>
+          </div>
+          <div class="tc-body">
+            <div class="tiles">
+              <div class="tile"><span class="ib"><svg class="ic"><use href="#i-chat"/></svg></span><b>答疑</b><small>教学难题</small></div>
+              <div class="tile"><span class="ib"><svg class="ic"><use href="#i-pen"/></svg></span><b>备课</b><small>生成教案</small></div>
+              <div class="tile"><span class="ib"><svg class="ic"><use href="#i-layers"/></svg></span><b>分层</b><small>三档任务</small></div>
+              <div class="tile"><span class="ib"><svg class="ic"><use href="#i-link"/></svg></span><b>衔接</b><small>对应中考</small></div>
+              <div class="tile"><span class="ib"><svg class="ic"><use href="#i-parent"/></svg></span><b>家长话术</b><small>合规两版</small></div>
+              <div class="tile"><span class="ib"><svg class="ic"><use href="#i-eye"/></svg></span><b>评课</b><small>五维等级</small></div>
+              <div class="tile"><span class="ib"><svg class="ic"><use href="#i-board"/></svg></span><b>做培训</b><small>师训方案</small></div>
+              <div class="tile"><span class="ib"><svg class="ic"><use href="#i-globe"/></svg></span><b>查一下</b><small>联网核实</small></div>
+            </div>
+            <div class="panel">
+              <h6>最近对话<small>全部</small></h6>
+              <div class="li"><svg class="ic sm"><use href="#i-chat"/></svg><span>答疑:Think 第1级跟不上课文</span><em>14:05</em></div>
+              <div class="li"><svg class="ic sm"><use href="#i-pen"/></svg><span>备课:PU 第3级 Unit 5 阅读课</span><em>昨天</em></div>
+            </div>
+            <div class="panel">
+              <h6>我的入库卡<small>3 张</small></h6>
+              <div class="li"><span>Think1 分层阅读三档任务</span><em class="pill wait">待审核</em></div>
+              <div class="li"><span>PU3 词汇接龙分层</span><em class="pill ok">已入库</em></div>
+            </div>
+          </div>
+          <div class="tabbar"><span class="on"><svg class="ic"><use href="#i-home"/></svg>首页</span><span><svg class="ic"><use href="#i-chat"/></svg>对话</span><span><svg class="ic"><use href="#i-folder"/></svg>资料</span><span><svg class="ic"><use href="#i-user"/></svg>我的</span></div>
+        </div></div>
+        <figcaption class="cap"><b>手机 · 首页</b> 八个功能宫格,入库卡进度在首页可见</figcaption>
+      </figure>
+
+      <figure class="shot" style="margin:0" data-compare="方案C 工作台宫格">
+        <div class="phone"><div class="screen tc">
+          <div class="sb" style="background:#fff">9:41</div>
+          <div class="tc-bar"><svg class="ic sm"><use href="#i-back"/></svg><b>Think 第1级跟不上课文</b><span class="pill">答疑</span></div>
+          <div class="tc-body">
+            <div class="tc-user">Think 第1级班里一半学生跟不上课文,怎么办?</div>
+            <div class="answer">
+              <div class="concl"><b>结论</b>先别换教材。两周内做完下面三件事再看单元测;不回升再按跨级规则调整。</div>
+              <div class="sec"><h6>原因</h6><p><span class="tagx">选级</span>部分学生入学词汇量低于本级要求</p><p><span class="tagx">教法</span>课文整篇精讲,基础层没有支架</p></div>
+              <div class="sec"><h6>做法(按优先级)</h6>
+                <div class="steps">
+                  <div class="step first"><i>1</i><p><span class="tagx hot">第一优先</span>课前 10 分钟词汇预学,每课 8-10 个核心词</p></div>
+                  <div class="step"><i>2</i><p>课中基础层给句型支架,提升层改写结尾</p></div>
+                  <div class="step"><i>3</i><p>第 2 周末 5 道细节题检测,对 4 题算达标</p></div>
+                </div>
+              </div>
+              <div class="sec"><h6>注意</h6><p>和家长只讲学习安排,不承诺分数。</p></div>
+              <div class="foot">依据 <span class="tier t1">L1 原版班跨级调整规则</span><span class="tier t3">L3 Think1 分层阅读课例</span></div>
+            </div>
+          </div>
+          <div class="actbar">
+            <div class="acts4"><span><svg class="ic sm"><use href="#i-doc"/></svg>Word</span><span><svg class="ic sm"><use href="#i-copy"/></svg>复制</span><span><svg class="ic sm"><use href="#i-up"/></svg>有用</span><span><svg class="ic sm"><use href="#i-down"/></svg>没用</span></div>
+            <div class="ask"><span class="plus"><svg class="ic sm"><use href="#i-plus"/></svg></span><span class="box">继续追问……</span><span class="go"><svg class="ic sm"><use href="#i-send"/></svg></span></div>
+          </div>
+        </div></div>
+        <figcaption class="cap"><b>手机 · 回答</b> 结论单独高亮,操作栏固定在底部</figcaption>
+      </figure>
+
+      <figure class="shot desk" style="margin:0">
+        <div class="scroll-x"><div class="browser">
+          <div class="chrome"><i></i><i></i><i></i><span>192.168.1.20:8000/admin</span></div>
+          <div class="tc tc-admin">
+            <span class="sample" style="top:66px">示例数据</span>
+            <div class="tc-top"><b>教研助手 · 管理</b><span class="on">工作台</span><span>知识库</span><span>入库卡</span><span>反馈</span><span>账号</span></div>
+            <div class="tc-main">
+              <div class="kpis">
+                <div class="kpi"><small>本周提问</small><b>214</b></div>
+                <div class="kpi"><small>活跃老师</small><b>31 / 36</b></div>
+                <div class="kpi alert"><small>待审核入库卡</small><b>3</b></div>
+                <div class="kpi alert"><small>待看差评</small><b>7</b></div>
+              </div>
+              <div class="tc-cols">
+                <div class="panel">
+                  <h6>知识缺口 Top 4<small>近 90 天</small></h6>
+                  <div class="rank">
+                    <div><i>1</i><span>Think 第2级单元卡</span><em class="pill wait">9 次</em></div>
+                    <div><i>2</i><span>2026 常州中考英语题型是否调整</span><em class="pill wait">6 次</em></div>
+                    <div><i>3</i><span>退费咨询的家长沟通口径</span><em class="pill wait">4 次</em></div>
+                    <div><i>4</i><span>PU 第4级与新概念青少版的衔接</span><em class="pill wait">3 次</em></div>
+                  </div>
+                </div>
+                <div class="panel">
+                  <h6>最新差评<small>老师反馈</small></h6>
+                  <div class="quote">"页码是编的,单元卡里没有这一页"<small>陈老师 · 备课:PU 第2级 Unit 3</small></div>
+                  <div class="quote">"没有给基础层的处理"<small>刘老师 · 分层:七年级 Think 第1级</small></div>
+                </div>
+              </div>
+              <div class="panel">
+                <h6>知识库<small>共 121 份 · 1541 段</small></h6>
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="tier t1">L1 机构标准 12 份</span><span class="tier t2">L2 官方依据 34 份</span><span class="tier t3">L3 课例参考 18 份</span><span class="tier t4">L4 参考资料 57 份</span></div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+        <figcaption class="cap"><b>电脑 · 管理后台</b> 工作台把"要处理的事"放在最上面</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== 并排对比 ===================== -->
+  <section class="plan" id="plan-compare" aria-labelledby="tab-compare">
+    <div class="plan-intro">
+      <div>
+        <h2>三个回答页并排</h2>
+        <p>同一个问题、同一段回答,三种排法。老师每天看得最多的就是这一页。</p>
+      </div>
+    </div>
+    <div class="compare" id="compare"></div>
+  </section>
+</div>
+
+<script>
+document.querySelectorAll("[data-compare]").forEach(function (shot) {
+  var copy = shot.cloneNode(true);
+  copy.removeAttribute("data-compare");
+  copy.querySelector(".cap").textContent = shot.getAttribute("data-compare");
+  document.getElementById("compare").appendChild(copy);
+});
+</script>
+</body>
+</html>
