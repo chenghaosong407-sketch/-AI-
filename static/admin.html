@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>管理后台</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%231f6feb%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-size=%2716%27 text-anchor=%27middle%27 fill=%27white%27%3EE%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <div class="admin">
+    <header>
+      <h1>管理后台</h1>
+      <a href="/"><button>返回对话</button></a>
+    </header>
+    <div class="tabs" id="tabs">
+      <button data-tab="overview" class="active">概览</button>
+      <button data-tab="kb">知识库</button>
+      <button data-tab="subs">入库卡审核 <span id="pendingCount"></span></button>
+      <button data-tab="gaps">知识缺口</button>
+      <button data-tab="users">账号</button>
+    </div>
+
+    <!-- 概览 -->
+    <section id="tab-overview">
+      <div class="card"><h3>运行配置</h3><div id="configBox" class="muted"></div></div>
+      <div class="card"><h3>知识库</h3><div class="grid4" id="tierStats"></div></div>
+      <div class="card"><h3>近30天指令使用</h3><div id="cmdStats"></div></div>
+      <div class="card"><h3>教师使用情况(提问数)</h3><div id="userStats"></div></div>
+    </section>
+
+    <!-- 知识库 -->
+    <section id="tab-kb" class="hidden">
+      <div class="card">
+        <h3>上传资料</h3>
+        <div class="form-row">
+          <select id="upTier">
+            <option value="4">L4 参考资料库(网上收集/购买,未审核)</option>
+            <option value="3">L3 课例库(经审核的课例、教学设计、听课记录)</option>
+            <option value="2">L2 教材官方库(单元卡、课程标准、考试说明)</option>
+            <option value="1">L1 机构标准库(教研负责人确认的标准/SOP/FAQ)</option>
+            <option value="0">自动:按文件开头标签判断,无标签归 L4</option>
+          </select>
+          <input id="upNote" placeholder="备注(可选,如来源、适用级别)" style="flex:1;min-width:180px">
+        </div>
+        <div class="form-row">
+          <input type="file" id="upFiles" multiple accept=".txt,.md,.csv,.docx,.pdf,.pptx,.xlsx" style="flex:1">
+          <button class="primary" id="upBtn">上传入库</button>
+        </div>
+        <div class="muted">支持 txt / md / docx / pdf(文字版)/ pptx / xlsx。教材请整理成"单元卡"再上传(模板见 templates/ 目录),不要上传整本扫描件。单元卡之间用单独一行 ===分段=== 隔开,检索更准。</div>
+        <div id="upResult" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card">
+        <h3>检索测试</h3>
+        <div class="form-row">
+          <input id="testQ" placeholder="输入老师可能会问的问题,看能检索到哪些资料" style="flex:1">
+          <button id="testBtn">检索</button>
+        </div>
+        <div id="testResult" class="list"></div>
+      </div>
+
+      <div class="card">
+        <h3>资料列表</h3>
+        <div class="form-row">
+          <select id="docTier">
+            <option value="">全部层级</option>
+            <option value="1">L1 机构标准</option><option value="2">L2 官方依据</option>
+            <option value="3">L3 课例参考</option><option value="4">L4 参考资料</option>
+          </select>
+          <input id="docQ" placeholder="按文件名/备注搜索" style="flex:1;min-width:160px">
+          <button id="docSearch">查询</button>
+          <button id="reembed">补全向量</button>
+          <button id="reembedAll">全部重建向量</button>
+          <a href="/api/admin/export/coze"><button>导出到扣子(zip)</button></a>
+        </div>
+        <div id="docList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- 入库卡 -->
+    <section id="tab-subs" class="hidden">
+      <div class="card">
+        <div class="form-row">
+          <select id="subStatus">
+            <option value="pending">待审核</option>
+            <option value="approved">已入库</option>
+            <option value="rejected">未通过</option>
+          </select>
+          <span class="muted">审核通过的入库卡会写入所选知识库,并自动填写"状态"和"审核意见"。</span>
+        </div>
+        <div id="subList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- 知识缺口 -->
+    <section id="tab-gaps" class="hidden">
+      <div class="card">
+        <h3>近90天回答中标注的"知识缺口"</h3>
+        <div class="muted" style="margin-bottom:8px">按出现次数排序。出现越多,越应该优先补充对应资料或制定机构标准。</div>
+        <div id="gapList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- 账号 -->
+    <section id="tab-users" class="hidden">
+      <div class="card">
+        <h3>批量新建账号</h3>
+        <div class="muted">每行一个:用户名,姓名,初始密码,角色。角色写"教师"或"管理员",不写默认教师。首次登录会要求改密码。</div>
+        <textarea id="newUsers" rows="6" placeholder="zhangsan,张三,yx123456,教师&#10;lisi,李四,yx123456" style="margin:8px 0"></textarea>
+        <button class="primary" id="createUsers">创建</button>
+        <div id="userResult" style="margin-top:8px"></div>
+      </div>
+      <div class="card"><h3>账号列表</h3><div id="userList" class="list"></div></div>
+    </section>
+  </div>
+
+  <div id="modal" class="modal-mask hidden"><div class="modal" id="modalBody"></div></div>
+  <script src="/static/common.js"></script>
+  <script src="/static/admin.js"></script>
+</body>
+</html>

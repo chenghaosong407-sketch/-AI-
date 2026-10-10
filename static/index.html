@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>原版教研助手</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%231f6feb%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-size=%2716%27 text-anchor=%27middle%27 fill=%27white%27%3EE%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <!-- 登录 -->
+  <div id="login" class="login-wrap hidden">
+    <div class="login-card">
+      <h1 id="loginTitle">原版教研助手</h1>
+      <div class="muted">优学东方内部使用 · 请用管理员分配的账号登录</div>
+      <form id="loginForm">
+        <input id="loginUser" placeholder="用户名" autocomplete="username" required>
+        <input id="loginPass" type="password" placeholder="密码" autocomplete="current-password" required>
+        <div class="err" id="loginErr"></div>
+        <button class="primary" type="submit">登录</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 主界面 -->
+  <div id="app" class="app hidden">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <button class="primary" id="newChat">+ 新对话</button>
+      </div>
+      <div class="conv-list" id="convList"></div>
+      <div class="sidebar-foot">
+        <span class="muted" id="whoami"></span>
+        <button id="mySubs">我的入库卡</button>
+        <button id="changePw">改密码</button>
+        <a id="adminLink" class="hidden" href="/admin"><button>管理后台</button></a>
+        <button id="logout">退出</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <button class="menu-btn" id="menuBtn" aria-label="对话列表">☰</button>
+        <div class="title" id="convTitle">新对话</div>
+        <span class="badge warn hidden" id="demoBadge">演示模式</span>
+        <span class="badge hidden" id="searchBadge">联网</span>
+      </div>
+
+      <div class="messages" id="messages"></div>
+
+      <div class="composer">
+        <div class="chips" id="chips"></div>
+        <div class="file-list" id="fileList"></div>
+        <div class="input-row">
+          <button id="attachBtn" title="上传附件(评课材料、待学习资料等)">📎</button>
+          <input type="file" id="fileInput" class="hidden" multiple accept=".txt,.md,.csv,.docx,.pdf,.pptx,.xlsx">
+          <textarea id="input" rows="1" placeholder="直接提问,或点上方指令"></textarea>
+          <button class="primary" id="sendBtn">发送</button>
+          <button class="hidden" id="stopBtn">停止</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 通用弹窗 -->
+  <div id="modal" class="modal-mask hidden">
+    <div class="modal" id="modalBody"></div>
+  </div>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

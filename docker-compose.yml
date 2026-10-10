@@ -1,0 +1,13 @@
+services:
+  assistant:
+    build: .
+    container_name: yx-assistant
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DATA_DIR=/app/data
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data          # 数据库与上传资料,备份这个目录即可
+      - ./prompts:/app/prompts    # 改提示词无需重新构建镜像,重启容器即可

@@ -1,0 +1,53 @@
+openapi: 3.0.1
+info:
+  title: 优学东方原版教研知识库
+  description: 检索优学东方四级知识库(L1机构标准、L2官方依据、L3课例参考、L4参考资料),返回带层级标签的片段。
+  version: "1.0"
+servers:
+  - url: https://your-domain.example.com   # 改成你部署的 HTTPS 域名
+paths:
+  /api/plugin/kb_search:
+    post:
+      operationId: kb_search
+      summary: 检索机构知识库
+      description: 用老师的问题检索知识库。回答 PU/Think 教学、分层、应试衔接、机构标准相关问题前先调用。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  description: 检索问题,保留教材、级别、单元等关键词,例如"Think 2 Unit 4 分层任务"
+                top_k:
+                  type: integer
+                  description: 返回条数,1-12,默认 6
+      responses:
+        "200":
+          description: 检索结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  text:
+                    type: string
+                    description: 已按层级排序、带标签的检索结果全文,可直接作为参考资料
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tag:
+                          type: string
+                          description: 层级标签,如【L1机构标准】
+                        source:
+                          type: string
+                          description: 来源文件名
+                        content:
+                          type: string
+                          description: 片段内容
