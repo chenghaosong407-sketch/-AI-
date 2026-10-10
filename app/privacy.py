@@ -11,9 +11,13 @@ _PATTERNS = [
 ]
 
 
-def mask_pii(text: str) -> tuple[str, int]:
+_EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+
+
+def mask_pii(text: str, emails: bool = False) -> tuple[str, int]:
+    """emails=True 时同时隐去邮箱(导出到扣子时使用:飞书等渠道会屏蔽含邮箱的消息)。"""
     count = 0
-    for pattern in _PATTERNS:
+    for pattern in _PATTERNS + ([_EMAIL] if emails else []):
         text, n = pattern.subn(MASK, text)
         count += n
     return text, count

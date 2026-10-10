@@ -17,6 +17,7 @@
       <button data-tab="overview" class="active">概览</button>
       <button data-tab="kb">知识库</button>
       <button data-tab="subs">入库卡审核 <span id="pendingCount"></span></button>
+      <button data-tab="feedback">回答反馈</button>
       <button data-tab="gaps">知识缺口</button>
       <button data-tab="users">账号</button>
     </div>
@@ -25,7 +26,7 @@
     <section id="tab-overview">
       <div class="card"><h3>运行配置</h3><div id="configBox" class="muted"></div></div>
       <div class="card"><h3>知识库</h3><div class="grid4" id="tierStats"></div></div>
-      <div class="card"><h3>近30天指令使用</h3><div id="cmdStats"></div></div>
+      <div class="card"><h3>近30天指令使用</h3><div id="cmdStats"></div><div id="fbStats" class="muted" style="margin-top:6px"></div></div>
       <div class="card"><h3>教师使用情况(提问数)</h3><div id="userStats"></div></div>
     </section>
 
@@ -90,6 +91,20 @@
           <span class="muted">审核通过的入库卡会写入所选知识库,并自动填写"状态"和"审核意见"。</span>
         </div>
         <div id="subList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- 回答反馈 -->
+    <section id="tab-feedback" class="hidden">
+      <div class="card">
+        <div class="form-row">
+          <select id="fbRating">
+            <option value="-1">👎 没用的回答</option>
+            <option value="1">👍 有用的回答</option>
+          </select>
+          <span class="muted">近90天。👎 多的问题优先补资料、改提示词;👍 的回答可整理成机构标准或 FAQ。</span>
+        </div>
+        <div id="fbList" class="list"></div>
       </div>
     </section>
 

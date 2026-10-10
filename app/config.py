@@ -77,7 +77,7 @@ class Settings:
         self.llm_api_key = _str("LLM_API_KEY")
         self.llm_model = _str("LLM_MODEL")
         self.llm_temperature = _float("LLM_TEMPERATURE", 0.4)
-        self.llm_max_tokens = _int("LLM_MAX_TOKENS", 4096)
+        self.llm_max_tokens = _int("LLM_MAX_TOKENS", 8192)
         self.llm_timeout = _int("LLM_TIMEOUT", 180)
         self.llm_extra_body = _json("LLM_EXTRA_BODY")
         self.llm_supports_tools = _str("LLM_SUPPORTS_TOOLS", "true").lower() != "false"
@@ -87,11 +87,15 @@ class Settings:
         self.embed_api_key = _str("EMBED_API_KEY", self.llm_api_key)
         self.embed_model = _str("EMBED_MODEL")
         self.embed_batch = max(1, _int("EMBED_BATCH", 10))
+        # auto:模型名含 embedding-vision 时走豆包多模态向量接口,否则走通用 /embeddings
+        self.embed_api_style = _str("EMBED_API_STYLE", "auto").lower()
+        self.embed_dimensions = _int("EMBED_DIMENSIONS", 0)  # 0 = 用模型默认(豆包多模态默认取 1024)
+        self.embed_concurrency = _int("EMBED_CONCURRENCY", 5)
 
         # 联网搜索
         self.search_provider = _str("SEARCH_PROVIDER", "none").lower()
         self.search_api_key = _str("SEARCH_API_KEY")
-        self.search_endpoint = _str("SEARCH_ENDPOINT", "https://api.bochaai.com/v1/web-search")
+        self.search_endpoint = _str("SEARCH_ENDPOINT", "https://api.bocha.cn/v1/web-search")
         self.search_mode = _str("SEARCH_MODE", "tool").lower()  # tool=模型自己决定;auto=关键词触发
         self.search_count = _int("SEARCH_COUNT", 8)
 

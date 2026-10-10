@@ -134,3 +134,34 @@ def test_plugin_endpoint():
                         headers={"Authorization": "Bearer test-plugin-key"})
         assert r.status_code == 200
         assert r.json()["text"].startswith("【知识库检索结果】")
+        r = client.post("/api/plugin/kb_search", json={"query": "PU"}, headers={"Authorization": "test-plugin-key"})
+        assert r.status_code == 200  # 扣子里只填密钥、不带 Bearer 也可以
+
+
+def test_feedback_flow(admin):
+    r = admin.post("/api/chat", data={"text": "答疑:测试反馈"})
+    done = sse_events(r)[-1]
+    mid = done["message_id"]
+    assert admin.post(f"/api/messages/{mid}/feedback", json={"rating": -1, "comment": "页码是编的"}).status_code == 200
+    rows = admin.get("/api/admin/feedback?rating=-1").json()
+    assert rows[0]["comment"] == "页码是编的" and rows[0]["question"] == "答疑:测试反馈"
+    conv = admin.get(f"/api/conversations/{sse_events(r)[0]['conversation_id']}").json()
+    assert conv["messages"][1]["rating"] == -1
+    assert admin.post(f"/api/messages/{mid}/feedback", json={"rating": 1}).status_code == 200
+    assert admin.get("/api/admin/feedback?rating=-1").json() == [] or \
+        all(x["message_id"] != mid for x in admin.get("/api/admin/feedback?rating=-1").json())
+    assert admin.get("/api/admin/stats").json()["feedback"]["up"] >= 1
+    assert admin.post(f"/api/messages/{mid}/feedback", json={"rating": 5}).status_code == 400
+    assert admin.post("/api/messages/999999/feedback", json={"rating": 1}).status_code == 404
+
+
+def test_docx_export(admin):
+    import docx
+    content = "课题|PU 第2级 Unit 3|40分钟|混合班\n一、语言目标\n1. **掌握**一般现在时\n- 基础层:跟读\n> 注意事项"
+    r = admin.post("/api/export/docx", json={"content": content, "title": "PU2 Unit3 教案"})
+    assert r.status_code == 200
+    assert "filename*=UTF-8''PU2%20Unit3%20" in r.headers["content-disposition"]
+    d = docx.Document(io.BytesIO(r.content))
+    text = "\n".join(p.text for p in d.paragraphs)
+    assert "PU2 Unit3 教案" in text and "掌握一般现在时" in text and "**" not in text
+    assert admin.post("/api/export/docx", json={"content": "  "}).status_code == 400

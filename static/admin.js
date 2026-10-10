@@ -40,6 +40,7 @@ loaders.overview = guard(async () => {
   $("cmdStats").innerHTML = cmds.length ? cmds.map(([k, v]) => `${esc(k)}|${v}`).join("<br>") : '<span class="muted">暂无数据</span>';
   $("userStats").innerHTML = stats.per_user.map(u => `${esc(u.display_name)}(${esc(u.username)})|近7天 ${u.last7 || 0}|近30天 ${u.last30 || 0}`).join("<br>");
   $("pendingCount").textContent = stats.pending_submissions ? `(${stats.pending_submissions})` : "";
+  $("fbStats").textContent = `回答反馈:👍 ${stats.feedback.up} · 👎 ${stats.feedback.down}`;
 });
 
 /* ---------- 知识库 ---------- */
@@ -169,6 +170,24 @@ const loadSubs = guard(async () => {
 });
 $("subStatus").onchange = loadSubs;
 loaders.subs = loadSubs;
+
+/* ---------- 回答反馈 ---------- */
+const loadFeedback = guard(async () => {
+  const rows = await api("/api/admin/feedback?rating=" + $("fbRating").value);
+  $("fbList").innerHTML = rows.length ? "" : '<div class="muted">暂无反馈</div>';
+  for (const r of rows) {
+    const el = document.createElement("div");
+    el.className = "item";
+    el.innerHTML = `
+      <div class="item-head"><span class="name">${esc(r.question || "(无问题)")}</span>
+        <span class="muted">${esc(r.display_name)} · ${esc(r.created_at.slice(0, 16).replace("T", " "))}</span></div>
+      ${r.comment ? `<div style="margin-top:6px">反馈:<b>${esc(r.comment)}</b></div>` : ""}
+      <details style="margin-top:6px"><summary class="muted">查看回答</summary><pre>${esc(r.answer)}</pre></details>`;
+    $("fbList").appendChild(el);
+  }
+});
+$("fbRating").onchange = loadFeedback;
+loaders.feedback = loadFeedback;
 
 /* ---------- 知识缺口 ---------- */
 loaders.gaps = guard(async () => {

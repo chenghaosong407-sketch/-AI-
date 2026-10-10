@@ -149,7 +149,7 @@ async def run_chat(user: dict, conversation_id: int | None, text: str,
     if settings.search_ready and search.should_auto_search(text):
         q = search.auto_query(text)
         yield {"type": "status", "text": f"正在联网搜索:{q}"}
-        res = await search.web_search(q, "oneYear")
+        res = await search.web_search(q)
         searches.append({"query": q, "count": len(res["results"]), "urls": [r["url"] for r in res["results"]]})
         search_block = search.format_results(res)
 
@@ -170,6 +170,7 @@ async def run_chat(user: dict, conversation_id: int | None, text: str,
             for round_no in range(MAX_TOOL_ROUNDS + 1):
                 tools = [search.TOOL_SCHEMA] if use_tools and round_no < MAX_TOOL_ROUNDS else None
                 calls: list[dict] = []
+                thought = {"reasoning": "", "encrypted": ""}
                 round_text: list[str] = []
                 thinking_sent = False
                 async for event in llm.stream_chat(messages, tools):
@@ -182,14 +183,21 @@ async def run_chat(user: dict, conversation_id: int | None, text: str,
                         yield {"type": "status", "text": "深度思考中……"}
                     elif event["type"] == "tool_calls":
                         calls = event["calls"]
+                        thought = {"reasoning": event.get("reasoning", ""), "encrypted": event.get("encrypted", "")}
                 if not calls:
                     break
-                messages.append({
+                assistant_msg = {
                     "role": "assistant", "content": "".join(round_text),
                     "tool_calls": [{"id": c["id"], "type": "function",
                                     "function": {"name": c["name"], "arguments": c["arguments"] or "{}"}}
                                    for c in calls],
-                })
+                }
+                # 深度思考模型:原样回传思考摘要与加密原文(豆包官方要求,缺失会降低效果)
+                if thought["reasoning"]:
+                    assistant_msg["reasoning_content"] = thought["reasoning"]
+                if thought["encrypted"]:
+                    assistant_msg["encrypted_content"] = thought["encrypted"]
+                messages.append(assistant_msg)
                 for call in calls:
                     try:
                         args = json.loads(call["arguments"] or "{}")

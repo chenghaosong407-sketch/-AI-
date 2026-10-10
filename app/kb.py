@@ -228,7 +228,7 @@ async def _vector(idx: _Index, query: str, limit: int) -> list[tuple[int, float]
     if idx.vectors is None or not settings.embed_ready:
         return []
     try:
-        qvec = np.asarray((await llm.embed([query]))[0], dtype=np.float32)
+        qvec = np.asarray((await llm.embed([query], kind="query"))[0], dtype=np.float32)
     except Exception as exc:  # 向量服务异常时退回关键词检索
         log.warning("查询向量化失败,仅用关键词检索:%s", exc)
         return []
@@ -294,7 +294,7 @@ async def _embed_chunks(chunks: list[str], filename: str, tier: int) -> tuple[li
     if not settings.embed_ready:
         return [None] * len(chunks), ""
     try:
-        vectors = await llm.embed([f"{tier_tag(tier)}《{filename}》\n{c}" for c in chunks])
+        vectors = await llm.embed([f"{tier_tag(tier)}《{filename}》\n{c}" for c in chunks], kind="document")
         return [np.asarray(v, dtype=np.float32).tobytes() for v in vectors], ""
     except Exception as exc:
         log.warning("向量化失败:%s", exc)
@@ -356,7 +356,8 @@ async def rebuild_embeddings(only_missing: bool = True) -> dict:
     step = settings.embed_batch * 5
     for start in range(0, len(rows), step):
         batch = rows[start:start + step]
-        vectors = await llm.embed([f"{tier_tag(r['tier'])}《{r['filename']}》\n{r['content']}" for r in batch])
+        vectors = await llm.embed([f"{tier_tag(r['tier'])}《{r['filename']}》\n{r['content']}" for r in batch],
+                                  kind="document")
         with db.tx() as conn:
             conn.executemany("UPDATE chunks SET embedding=? WHERE id=?",
                              [(np.asarray(v, dtype=np.float32).tobytes(), r["id"]) for v, r in zip(vectors, batch)])

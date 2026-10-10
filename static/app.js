@@ -122,7 +122,7 @@ async function openConversation(id) {
   $("messages").innerHTML = "";
   for (const m of data.messages) {
     if (m.role === "user") addUserMsg(m.content, m.attachments);
-    else renderAssistant(addAssistantMsg(), m.content, m.sources, m.searches, m.id);
+    else renderAssistant(addAssistantMsg(), m.content, m.sources, m.searches, m.id, m.rating);
   }
   scrollBottom(true);
   loadConversations();
@@ -190,7 +190,67 @@ function extractCard(text) {
   return tail.slice(0, end + line.length).trim();
 }
 
-function renderAssistant(el, text, sources = [], searches = [], msgId = null) {
+function docTitle(text) {
+  // 教案首行"课题|教材及级别|课时|层次"、培训首行"培训名称|对象|…":取前两项作标题
+  const lines = text.split("\n").map(l => l.replace(/\*\*/g, "").trim()).filter(Boolean);
+  const head = lines.find(l => /^(课题|培训名称)/.test(l)) || lines.find(l => /^#{1,3}\s+/.test(l)) || lines[0] || "";
+  const parts = head.replace(/^#+\s*/, "").split("|")
+    .map(x => x.replace(/^(课题|培训名称|教材及级别|对象)\s*[:：]?\s*/, "").trim())
+    .filter(Boolean);
+  return parts.slice(0, 2).join(" ").slice(0, 40) || $("convTitle").textContent;
+}
+
+async function downloadDocx(text) {
+  try {
+    const resp = await fetch("/api/export/docx", {
+      method: "POST", credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: text, title: docTitle(text) }),
+    });
+    if (!resp.ok) throw new Error((await resp.json().catch(() => ({}))).detail || resp.statusText);
+    const blob = await resp.blob();
+    const cd = resp.headers.get("content-disposition") || "";
+    const m = cd.match(/filename\*=UTF-8''([^;]+)/);
+    const name = m ? decodeURIComponent(m[1]) : "教研助手.docx";
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast("已生成 Word:" + name);
+  } catch (e) {
+    toast("下载失败:" + e.message + "(微信内置浏览器不支持下载,请用手机浏览器打开)");
+  }
+}
+
+function feedbackButtons(meta, msgId, rating) {
+  const up = document.createElement("button");
+  const down = document.createElement("button");
+  up.textContent = "👍"; down.textContent = "👎";
+  up.title = "有用"; down.title = "没用,告诉教研负责人哪里不对";
+  const paint = r => {
+    up.classList.toggle("primary", r === 1);
+    down.classList.toggle("primary", r === -1);
+  };
+  let current = rating || 0;
+  paint(current);
+  const send = async (r, comment = "") => {
+    try {
+      await api(`/api/messages/${msgId}/feedback`, { method: "POST", body: { rating: r, comment } });
+      current = r; paint(r);
+      if (r === -1) toast("已反馈,教研负责人会在后台看到");
+    } catch (e) { toast(e.message); }
+  };
+  up.onclick = () => send(current === 1 ? 0 : 1);
+  down.onclick = () => {
+    if (current === -1) return send(0);
+    const comment = prompt("哪里不对?(可选,例如:页码是编的 / 没有分层 / 不符合常州考情)", "");
+    if (comment === null) return;
+    send(-1, comment);
+  };
+  meta.appendChild(up); meta.appendChild(down);
+}
+
+function renderAssistant(el, text, sources = [], searches = [], msgId = null, rating = 0) {
   const bubble = el.querySelector(".bubble");
   bubble.classList.remove("cursor");
   bubble.innerHTML = renderMarkdown(text);
@@ -210,6 +270,13 @@ function renderAssistant(el, text, sources = [], searches = [], msgId = null) {
   copyBtn.textContent = "复制";
   copyBtn.onclick = () => copyText(text);
   meta.appendChild(copyBtn);
+  if (text.length > 200) {
+    const wordBtn = document.createElement("button");
+    wordBtn.textContent = "下载Word";
+    wordBtn.onclick = () => downloadDocx(text);
+    meta.appendChild(wordBtn);
+  }
+  if (msgId) feedbackButtons(meta, msgId, rating);
   if (looksLikeCard(text)) {
     const subBtn = document.createElement("button");
     subBtn.textContent = "提交入库卡给教研负责人";

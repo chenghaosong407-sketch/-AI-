@@ -9,13 +9,14 @@ import uuid
 from contextlib import asynccontextmanager
 from datetime import date, timedelta
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import auth, chat, coze_export, db, kb, parsers
+from . import auth, chat, coze_export, db, docx_export, kb, parsers
 from .config import BASE_DIR, settings
 
 log = logging.getLogger("app")
@@ -140,8 +141,9 @@ def list_conversations(user: dict = Depends(auth.current_user)):
 @app.get("/api/conversations/{conv_id}")
 def get_conversation(conv_id: int, user: dict = Depends(auth.current_user)):
     conv = _own_conversation(conv_id, user)
-    rows = db.query("SELECT id, role, content, meta, created_at FROM messages"
-                    " WHERE conversation_id=? ORDER BY id", (conv_id,))
+    rows = db.query("SELECT m.id, m.role, m.content, m.meta, m.created_at, f.rating FROM messages m"
+                    " LEFT JOIN feedback f ON f.message_id = m.id AND f.user_id = ?"
+                    " WHERE m.conversation_id=? ORDER BY m.id", (user["id"], conv_id))
     for r in rows:
         meta = json.loads(r.pop("meta") or "{}")
         r["sources"] = meta.get("sources", [])
@@ -197,6 +199,49 @@ async def api_chat(text: str = Form(""), conversation_id: int | None = Form(None
 
     return StreamingResponse(stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# ---------------------------------------------------------------- 回答反馈与 Word 导出
+
+class FeedbackIn(BaseModel):
+    rating: int  # 1=有用,-1=没用,0=撤销
+    comment: str = ""
+
+
+@app.post("/api/messages/{message_id}/feedback")
+def message_feedback(message_id: int, body: FeedbackIn, user: dict = Depends(auth.current_user)):
+    msg = db.query_one(
+        "SELECT m.id FROM messages m JOIN conversations c ON c.id = m.conversation_id"
+        " WHERE m.id=? AND m.role='assistant' AND c.user_id=?", (message_id, user["id"]))
+    if not msg:
+        raise HTTPException(404, "消息不存在")
+    if body.rating == 0:
+        db.execute("DELETE FROM feedback WHERE message_id=? AND user_id=?", (message_id, user["id"]))
+    elif body.rating in (1, -1):
+        db.execute(
+            "INSERT INTO feedback (message_id, user_id, rating, comment, created_at) VALUES (?, ?, ?, ?, ?)"
+            " ON CONFLICT(message_id, user_id) DO UPDATE SET rating=excluded.rating, comment=excluded.comment,"
+            " created_at=excluded.created_at",
+            (message_id, user["id"], body.rating, body.comment.strip()[:500], db.now()))
+    else:
+        raise HTTPException(400, "rating 只能是 1、-1 或 0")
+    return {"ok": True}
+
+
+class DocxIn(BaseModel):
+    content: str
+    title: str = ""
+
+
+@app.post("/api/export/docx")
+def export_docx(body: DocxIn, _: dict = Depends(auth.current_user)):
+    if not body.content.strip():
+        raise HTTPException(400, "内容为空")
+    title = body.title.strip()[:60]
+    data = docx_export.build_docx(body.content[:200_000], title)
+    name = quote(docx_export.safe_filename(title) + ".docx")
+    return Response(data, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    headers={"Content-Disposition": f"attachment; filename=\"export.docx\"; filename*=UTF-8''{name}"})
 
 
 # ---------------------------------------------------------------- 入库卡(教师提交)
@@ -449,6 +494,24 @@ def admin_reject(sid: int, body: RejectIn, admin: dict = Depends(auth.require_ad
     return {"ok": True}
 
 
+# ---------------------------------------------------------------- 管理后台:回答反馈
+
+@app.get("/api/admin/feedback")
+def admin_feedback(rating: int = -1, days: int = 90, _: dict = Depends(auth.require_admin)):
+    since = (date.today() - timedelta(days=days)).isoformat()
+    rows = db.query(
+        "SELECT f.id, f.rating, f.comment, f.created_at, u.display_name, m.id AS message_id,"
+        " m.conversation_id, m.content AS answer,"
+        " (SELECT q.content FROM messages q WHERE q.conversation_id = m.conversation_id AND q.role='user'"
+        "   AND q.id < m.id ORDER BY q.id DESC LIMIT 1) AS question"
+        " FROM feedback f JOIN messages m ON m.id = f.message_id JOIN users u ON u.id = f.user_id"
+        " WHERE f.rating=? AND f.created_at >= ? ORDER BY f.id DESC LIMIT 200", (rating, since))
+    for r in rows:
+        r["answer"] = r["answer"][:1500]
+        r["question"] = (r["question"] or "")[:500]
+    return rows
+
+
 # ---------------------------------------------------------------- 管理后台:知识缺口与使用统计
 
 @app.get("/api/admin/gaps")
@@ -491,7 +554,10 @@ def admin_stats(_: dict = Depends(auth.require_admin)):
         by_cmd[key] = by_cmd.get(key, 0) + 1
     by_cmd = dict(sorted(by_cmd.items(), key=lambda kv: kv[1], reverse=True))
     pending = db.query_one("SELECT COUNT(*) AS n FROM submissions WHERE status='pending'")["n"]
+    fb = db.query_one("SELECT COALESCE(SUM(rating=1),0) AS up, COALESCE(SUM(rating=-1),0) AS down"
+                      " FROM feedback WHERE created_at >= ?", (d30,))
     return {"per_user": per_user, "by_command": by_cmd, "pending_submissions": pending,
+            "feedback": {"up": fb["up"], "down": fb["down"]},
             "config": {"model": settings.llm_model or "(未配置)", "llm_base_url": settings.llm_base_url,
                        "embed_model": settings.embed_model or "(未配置,仅关键词检索)",
                        "search": f"{settings.search_provider}/{settings.search_mode}" if settings.search_ready else "未接入",

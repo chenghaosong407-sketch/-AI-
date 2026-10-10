@@ -12,7 +12,7 @@ def test_tool_call_loop(monkeypatch):
     async def fake_stream(messages, tools=None):
         calls.append({"messages": [dict(m) for m in messages], "tools": tools})
         if len(calls) == 1:
-            yield {"type": "tool_calls", "calls": [
+            yield {"type": "tool_calls", "reasoning": "先搜索", "encrypted": "ENC", "calls": [
                 {"id": "c1", "name": "web_search", "arguments": json.dumps({"query": "常州中考英语 题型"})}]}
             yield {"type": "done", "finish_reason": "tool_calls"}
         else:
@@ -46,6 +46,7 @@ def test_tool_call_loop(monkeypatch):
     assert calls[0]["tools"][0]["function"]["name"] == "web_search"
     second = calls[1]["messages"]
     assert second[-2]["role"] == "assistant" and second[-2]["tool_calls"][0]["id"] == "c1"
+    assert second[-2]["reasoning_content"] == "先搜索" and second[-2]["encrypted_content"] == "ENC"
     assert second[-1]["role"] == "tool" and "https://example.com/a" in second[-1]["content"]
     assert "已接入,工具名 web_search" in second[0]["content"]
 

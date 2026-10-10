@@ -28,7 +28,7 @@ TOOL_SCHEMA = {
                 "freshness": {
                     "type": "string",
                     "enum": ["noLimit", "oneYear", "oneMonth", "oneWeek"],
-                    "description": "时间范围,政策和考试类建议 oneYear",
+                    "description": "时间范围,一般用 noLimit(搜索引擎会自动按时效排序);只有明确要最近一周/一月的新闻时才缩小",
                 },
             },
             "required": ["query"],
@@ -50,22 +50,46 @@ def auto_query(text: str) -> str:
     return text[:80]
 
 
+# 博查官方异常码 → 给管理员看的中文原因
+_ERRORS = {
+    400: "请求参数缺失",
+    401: "API KEY 无效,请检查 .env 中的 SEARCH_API_KEY",
+    403: "博查账户余额不足,请到 open.bocha.cn 充值",
+    429: "搜索请求频率达到上限,请稍后再试",
+    500: "搜索服务内部错误",
+}
+
+
+async def _request(query: str, freshness: str) -> dict:
+    payload = {"query": query, "freshness": freshness, "summary": True, "count": settings.search_count}
+    async with httpx.AsyncClient(timeout=httpx.Timeout(30, connect=10)) as client:
+        resp = await client.post(settings.search_endpoint, json=payload,
+                                 headers={"Authorization": f"Bearer {settings.search_api_key}"})
+    try:
+        body = resp.json()
+    except ValueError:
+        body = {}
+    code = resp.status_code
+    if code == 200 and str(body.get("code", 200)) not in ("200", ""):
+        code = int(body["code"]) if str(body["code"]).isdigit() else 500
+    if code != 200:
+        reason = _ERRORS.get(code) or body.get("message") or body.get("msg") or f"HTTP {code}"
+        raise RuntimeError(f"{reason}(错误码 {code})")
+    return body
+
+
 async def web_search(query: str, freshness: str = "noLimit") -> dict:
     if not settings.search_ready:
         return {"ok": False, "query": query, "results": [], "error": "未接入联网搜索"}
-    payload = {"query": query, "freshness": freshness or "noLimit", "summary": True,
-               "count": settings.search_count}
+    freshness = freshness or "noLimit"
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(30, connect=10)) as client:
-            resp = await client.post(settings.search_endpoint, json=payload,
-                                     headers={"Authorization": f"Bearer {settings.search_api_key}"})
-        resp.raise_for_status()
-        body = resp.json()
+        body = await _request(query, freshness)
+        items = _items(body)
+        if not items and freshness != "noLimit":  # 官方提示:限定时间范围容易搜不到,放宽后重试一次
+            items = _items(await _request(query, "noLimit"))
     except Exception as exc:
         log.warning("联网搜索失败:%s", exc)
         return {"ok": False, "query": query, "results": [], "error": str(exc)[:200]}
-    data = body.get("data") if isinstance(body.get("data"), dict) else body
-    items = ((data or {}).get("webPages") or {}).get("value") or []
     results = []
     for item in items:
         results.append({
@@ -76,6 +100,11 @@ async def web_search(query: str, freshness: str = "noLimit") -> dict:
             "snippet": (item.get("summary") or item.get("snippet") or "")[:800],
         })
     return {"ok": bool(results), "query": query, "results": results, "error": "" if results else "无结果"}
+
+
+def _items(body: dict) -> list[dict]:
+    data = body.get("data") if isinstance(body.get("data"), dict) else body
+    return ((data or {}).get("webPages") or {}).get("value") or []
 
 
 def format_results(res: dict) -> str:
